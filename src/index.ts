@@ -11,8 +11,9 @@ import { lookupMime } from './mime.js';
 import { create as createCid, toString as cidToString } from '@atcute/cid';
 import { getDidAndPds, getSha256, KittyAgent } from 'kitty-agent';
 import '@atcute/client/lexicons';
+import { encryptData } from './crypto.js';
 
-let { values: { username, password, dryRun, encrypt }, positionals: pos } = parseArgs({
+let { values: { username, password, dryRun, encryptPassphrase }, positionals: pos } = parseArgs({
   options: {
     username: {
       type: "string",
@@ -25,8 +26,8 @@ let { values: { username, password, dryRun, encrypt }, positionals: pos } = pars
     dryRun: {
         type: 'boolean',
     },
-    encrypt: {
-        type: 'boolean'
+    encryptPassphrase: {
+        type: 'string',
     },
   },
   allowPositionals: true,
@@ -37,7 +38,7 @@ const rl = Readline.createInterface({ input: process.stdin, output: process.stdo
 username ??= process.env.BSKY_USERNAME ?? await rl.question('Bluesky Username > ');
 password ??= process.env.BSKY_PASSWORD ?? await rl.question('Bluesky Password (or App Password) > ');
 
-const { pds } = await getDidAndPds(username);
+const { pds, did } = await getDidAndPds(username);
 const session = new CredentialManager({ service: pds });
 const agent = new KittyAgent({ handler: session });
 
@@ -78,7 +79,11 @@ if (command === 'upload') {
             const rkey = filepathToRkey(path);
             console.log(realPath, rkey, path);
 
-            const file = await readFile(realPath);
+            let file: Uint8Array = await readFile(realPath);
+
+            if (encryptPassphrase) {
+                file = await encryptData(file, encryptPassphrase)
+            }
 
             const cidCompare = cidToString(await createCid(0x55, file));
             if (allBlobs.has(cidCompare)) {
@@ -90,7 +95,9 @@ if (command === 'upload') {
                 // TODO find existing CID and don't upload if unchanged
                 const blob = await agent.uploadBlob(
                     new Blob([file], {
-                        type: lookupMime(realPath) ?? parseMime(file.buffer as ArrayBuffer)?.mime
+                        type: encryptPassphrase
+                            ? 'application/vnd.age'
+                            : (lookupMime(realPath) ?? parseMime(file.buffer as ArrayBuffer)?.mime)
                     })
                 );
 
@@ -103,8 +110,8 @@ if (command === 'upload') {
                         blob: blob,
                         createdAt: new Date().toISOString(),
                         file: {
-                            mimeType: blob.mimeType,
-                            name: path,
+                            mimeType: encryptPassphrase ? 'application/vnd.age' : blob.mimeType,
+                            name: `${path}.age`,
                             modifiedAt: (await stat(realPath)).mtime.toISOString(),
                             size: blob.size,
                         },
@@ -122,6 +129,8 @@ if (command === 'upload') {
             }
         }
     }
+} else if (command === 'daemon') {
+    await (await import('./daemon.js')).start({ agent, pds, did });
 } else {
     throw new Error('No command specified!');
 }

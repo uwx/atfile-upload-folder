@@ -15,11 +15,16 @@
     "dependencies": {
         "@atcute/cid": "^2.1.0",
         "@atcute/client": "^2.0.6",
+        "@hono/node-server": "^1.13.7",
+        "@noble/hashes": "^1.7.0",
+        "age-encryption": "^0.2.0",
         "dotenv": "^16.4.7",
         "file-type-mime": "^0.4.5",
+        "hono": "^4.6.16",
         "kitty-agent": "^8.2.0",
         "mime-db": "^1.53.0",
         "mime-type": "^5.0.0",
-        "path-browserify": "^1.0.1"
+        "path-browserify": "^1.0.1",
+        "uint8arrays": "^5.1.0"
     }
 }
