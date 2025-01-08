@@ -130,7 +130,7 @@ if (command === 'upload') {
         }
     }
 } else if (command === 'daemon') {
-    await (await import('./daemon.js')).start({ agent, pds, did });
+    await (await import('./daemon.js')).start({ agent, pds, did, encryptPassphrase });
 } else {
     throw new Error('No command specified!');
 }

@@ -3,6 +3,6 @@
   "Name": "atfile-upload-folder daemon",
   "DestinationType": "ImageUploader, TextUploader, FileUploader",
   "RequestMethod": "POST",
-  "RequestURL": "http://localhost:16912/upload",
+  "RequestURL": "http://localhost:16912/upload/encrypted",
   "Body": "Binary"
 }
